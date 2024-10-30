@@ -93,10 +93,10 @@ bool verifier::verify_NDTG_step(const SAS_State& curr, const SAS_State& prev, SA
     for (auto fact : curr.get_assignment()){
 
         //variable not "touched" by "previous state"
-        if (!prev_temp.get_assignment().contains(fact.first)) continue;
+        //if (!prev_temp.get_assignment().contains(fact.first)) continue;
 
         //cases in which the value of the variable is the same as in the "prev" state
-        if (fact.second==prev_temp.get(fact.first)){
+        if (!prev_temp.get_assignment().contains(fact.first) || fact.second==prev_temp.get(fact.first)){
             //using Lemma 1
             if (_NDTG.isLeaf(fact.first,fact.second)) continue;
 
@@ -124,9 +124,10 @@ bool verifier::verify_NDTG_step(const SAS_State& curr, const SAS_State& prev, SA
             if (!lemma3_used){
                 bool passed_lemma3 = true;
                 for (auto ev : _problem.get_events()) if (ev.deletesFact(fact.first,fact.second)){
-                    for (auto ev2 : _problem.get_events()) if (ev.hold_after().satisfy_all(ev.get_preconditions())){
+                    for (auto ev2 : _problem.get_events()) if (ev.hold_after().satisfy_all(ev2.get_preconditions())){
                         for (auto ev3 : _problem.get_events()) if (ev2.get_name()!=ev3.get_name()&&ev3.isClobbererFor(ev2)&&!ev2.get_preconditions().any_mismatch(ev3.get_preconditions())){
-                            if (ev3.get_preconditions().get(fact.first)!=fact.second&&ev3.get_minimal_effects().get(fact.first)!=fact.second){
+                            if ((!ev3.get_preconditions().contains(fact.first)||ev3.get_preconditions().get(fact.first)!=fact.second)&&(!ev3.get_minimal_effects().contains(fact.first)||ev3.get_minimal_effects().get(fact.first)!=fact.second)){
+                            //if (ev3.get_preconditions().get(fact.first)!=fact.second&&ev3.get_minimal_effects().get(fact.first)!=fact.second){
                                 //it's bad, the assumption of Lemma 3 not satisfied
                                 //std::cout << "Failing Lemma 3 on event " << ev2.get_name() << " by event " << ev3.get_name() << std::endl;
                                 passed_lemma3=false;
